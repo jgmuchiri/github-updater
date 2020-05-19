@@ -252,6 +252,12 @@ class Plugin {
 			) {
 				add_action( "after_plugin_row_{$plugin->file}", [ $this, 'plugin_branch_switcher' ], 15, 3 );
 			}
+
+			// Fix for Gist.
+			if ( 'gist' === $plugin->git ) {
+				$this->config[ $plugin->slug ] = $plugin;
+				unset( $this->config[ $plugin->gist_id ] );
+			}
 		}
 
 		$schedule_event = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ? is_main_site() : true;

@@ -400,12 +400,14 @@ trait GHU_Trait {
 			'Bitbucket' => 'bitbucket_' . $type,
 			'GitLab'    => 'gitlab_' . $type,
 			'Gitea'     => 'gitea_' . $type,
+			'Gist'      => 'gist_' . $type,
 		];
 		$repo_base_uris = [
 			'GitHub'    => 'https://github.com/',
 			'Bitbucket' => 'https://bitbucket.org/',
 			'GitLab'    => 'https://gitlab.com/',
 			'Gitea'     => '',
+			'Gist'      => 'https://gist.github.com/',
 		];
 
 		if ( array_key_exists( $repo, $repo_types ) ) {
