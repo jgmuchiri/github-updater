@@ -36,8 +36,7 @@ class Gist_API extends API implements API_Interface {
 	 */
 	public function __construct( $type ) {
 		parent::__construct();
-		$type           = $this->parse_gist_data( $type );
-		$this->type     = $type;
+		$this->type     = null === $type ? $type : $this->parse_gist_meta( $type );
 		$this->response = $this->get_repo_cache();
 		$branch         = new Branch( $this->response );
 		if ( ! empty( $type->branch ) ) {
@@ -67,6 +66,7 @@ class Gist_API extends API implements API_Interface {
 	 * @return bool
 	 */
 	public function get_remote_tag() {
+		// phpcs:ignore
 		// return $this->get_remote_api_tag( 'gist', '/repos/:owner/:repo/tags' );
 	}
 
@@ -105,6 +105,7 @@ class Gist_API extends API implements API_Interface {
 	 * @return bool
 	 */
 	public function get_remote_branches() {
+		// phpcs:ignore
 		// return $this->get_remote_api_branches( 'gist', '/repos/:owner/:repo/branches' );
 	}
 
@@ -114,6 +115,7 @@ class Gist_API extends API implements API_Interface {
 	 * @return string|bool
 	 */
 	public function get_release_asset() {
+		// phpcs:ignore
 		// return $this->get_api_release_asset( 'gist', '/repos/:owner/:repo/releases/latest' );
 	}
 
@@ -130,30 +132,7 @@ class Gist_API extends API implements API_Interface {
 		self::$method       = 'download_link';
 		$download_link_base = $this->get_api_url( '/:owner/:gist_id/archive/', true );
 		$endpoint           = "{$this->response['meta']['current_hash']}.zip";
-
-		// Release asset.
-		// if ( $this->use_release_asset( $branch_switch ) ) {
-		// $release_asset = $this->get_release_asset();
-		//
-		// return $this->get_release_asset_redirect( $release_asset, true );
-		// }
-
-		/*
-		 * If a branch has been given, use branch.
-		 * If branch is master (default) and tags are used, use newest tag.
-		 */
-		// if ( 'master' !== $this->type->branch || empty( $this->type->tags ) ) {
-		// $endpoint .= $this->type->branch;
-		// } else {
-		// $endpoint .= $this->type->newest_tag;
-		// }
-
-		// Create endpoint for branch switching.
-		// if ( $branch_switch ) {
-		// $endpoint = $branch_switch;
-		// }
-
-		$download_link = $download_link_base . $endpoint;
+		$download_link      = $download_link_base . $endpoint;
 
 		/**
 		 * Filter download link so developers can point to specific ZipFile
@@ -181,12 +160,9 @@ class Gist_API extends API implements API_Interface {
 			case 'file':
 			case 'readme':
 			case 'changes':
-				// $endpoint = add_query_arg( 'ref', $git->type->branch, $endpoint );
 				$endpoint = $endpoint['base_raw'];
 				break;
 			case 'meta':
-			case 'tags':
-			case 'release_asset':
 			case 'translation':
 				$endpoint = $endpoint['base_uri'];
 				break;
@@ -194,18 +170,12 @@ class Gist_API extends API implements API_Interface {
 				$endpoint = $endpoint['base_download'];
 				break;
 			case 'branches':
-				// $endpoint = add_query_arg( 'per_page', '100', $endpoint );
+			case 'tags':
+			case 'release_asset':
 				break;
 			default:
 				break;
 		}
-
-		/*
-		 * If GitHub Enterprise return this endpoint.
-		 */
-		// if ( ! empty( $git->type->enterprise_api ) ) {
-			// return $git->type->enterprise_api . $endpoint;
-		// }
 
 		return $endpoint;
 	}
@@ -234,15 +204,15 @@ class Gist_API extends API implements API_Interface {
 	/**
 	 * Parse gist data.
 	 *
-	 * @param \stdClass $type Repository object.
+	 * @param \stdClass $repo Repository object.
 	 *
 	 * @return \stdClass
 	 */
-	private function parse_gist_data( $type ) {
-		$type->gist_id = property_exists( $type, 'gist_id' ) ? $type->gist_id : $type->slug;
-		$type->slug    = dirname( $type->file );
+	public function parse_gist_meta( $repo ) {
+		$repo->gist_id = property_exists( $repo, 'gist_id' ) ? $repo->gist_id : $repo->slug;
+		$repo->slug    = dirname( $repo->file );
 
-		return $type;
+		return $repo;
 	}
 
 	/**
@@ -331,17 +301,17 @@ class Gist_API extends API implements API_Interface {
 	 * @return array Array of branch data.
 	 */
 	public function parse_branch_response( $response ) {
-		// if ( $this->validate_response( $response ) ) {
-		// return $response;
-		// }
-		// $branches = [];
+		if ( $this->validate_response( $response ) ) {
+			return $response;
+		}
+		$branches = [];
 		// foreach ( $response as $branch ) {
 		// $branches[ $branch->name ]['download']    = $this->construct_download_link( $branch->name );
 		// $branches[ $branch->name ]['commit_hash'] = $branch->commit->sha;
 		// $branches[ $branch->name ]['commit_api']  = $branch->commit->url;
 		// }
-		//
-		// return $branches;
+
+		return $branches;
 	}
 
 	/**
@@ -353,25 +323,7 @@ class Gist_API extends API implements API_Interface {
 	 * @return array
 	 */
 	protected function parse_tags( $response, $repo_type ) {
-		// $tags     = [];
-		// $rollback = [];
-		//
-		// foreach ( (array) $response as $tag ) {
-		// $download_base    = implode(
-		// '/',
-		// [
-		// $repo_type['base_uri'],
-		// 'repos',
-		// $this->type->owner,
-		// $this->type->slug,
-		// 'zipball/',
-		// ]
-		// );
-		// $tags[]           = $tag;
-		// $rollback[ $tag ] = $download_base . $tag;
-		// }
-		//
-		// return [ $tags, $rollback ];
+		return [];
 	}
 
 	/**
@@ -382,36 +334,24 @@ class Gist_API extends API implements API_Interface {
 	 * @return void
 	 */
 	public function add_settings( $auth_required ) {
-		// add_settings_section(
-		// 'github_access_token',
-		// esc_html__( 'GitHub Personal Access Token', 'github-updater' ),
-		// [ $this, 'print_section_github_access_token' ],
-		// 'github_updater_github_install_settings'
-		// );
-
-		// add_settings_field(
-		// 'github_access_token',
-		// esc_html__( 'GitHub.com Access Token', 'github-updater' ),
-		// [ Singleton::get_instance( 'Settings', $this ), 'token_callback_text' ],
-		// 'github_updater_github_install_settings',
-		// 'github_access_token',
-		// [
-		// 'id'    => 'github_access_token',
-		// 'token' => true,
-		// ]
-		// );
+		add_settings_section(
+			'github_access_token',
+			esc_html__( 'GitHub Gist Settings', 'github-updater' ),
+			null,
+			'github_updater_gist_install_settings'
+		);
 
 		/*
-		 * Show section for private GitHub repositories.
+		 * Show section for private GitHub Gists.
 		 */
-		// if ( $auth_required['gist_private'] ) {
-		// add_settings_section(
-		// 'github_id',
-		// esc_html__( 'GitHub Private Settings', 'github-updater' ),
-		// [ $this, 'print_section_github_info' ],
-		// 'github_updater_github_install_settings'
-		// );
-		// }
+		if ( $auth_required['gist_private'] ) {
+			add_settings_section(
+				'gist_id',
+				esc_html__( 'Gist Private Settings', 'github-updater' ),
+				[ $this, 'print_section_gist_info' ],
+				'github_updater_gist_install_settings'
+			);
+		}
 	}
 
 	/**
@@ -433,15 +373,8 @@ class Gist_API extends API implements API_Interface {
 	/**
 	 * Print the GitHub text.
 	 */
-	public function print_section_github_info() {
-		// esc_html_e( 'Enter your GitHub Access Token. Leave empty for public repositories.', 'github-updater' );
-	}
-
-	/**
-	 * Print the GitHub Personal Access Token text.
-	 */
-	public function print_section_github_access_token() {
-		// esc_html_e( 'Enter your personal GitHub.com or GitHub Enterprise Access Token to avoid API access limits.', 'github-updater' );
+	public function print_section_gist_info() {
+		esc_html_e( 'Enter your GitHub Access Token. Leave empty for public repositories.', 'github-updater' );
 	}
 
 	/**
@@ -450,13 +383,13 @@ class Gist_API extends API implements API_Interface {
 	 * @param string $type plugin|theme.
 	 */
 	public function add_install_settings_fields( $type ) {
-		// add_settings_field(
-		// 'github_access_token',
-		// esc_html__( 'GitHub Access Token', 'github-updater' ),
-		// [ $this, 'github_access_token' ],
-		// 'github_updater_install_' . $type,
-		// $type
-		// );
+		add_settings_field(
+			'gist_slug',
+			esc_html__( 'Gist Slug', 'github-updater' ),
+			[ $this, 'gist_slug' ],
+			'github_updater_install_' . $type,
+			$type
+		);
 	}
 
 	/**
@@ -487,6 +420,21 @@ class Gist_API extends API implements API_Interface {
 	}
 
 	/**
+	 * Set repo slug for remote install.
+	 */
+	public function gist_slug() {
+		?>
+		<label for="gist_slug">
+			<input class="gist_setting" type="text" style="width:50%;" id="gist_slug" name="gist_slug" value="" placeholder="my-repo-slug">
+			<br>
+			<span class="description">
+				<?php esc_html_e( 'Enter plugin or theme slug.', 'github-updater' ); ?>
+			</span>
+		</label>
+		<?php
+	}
+
+	/**
 	 * Add remote install feature, create endpoint.
 	 *
 	 * @param array $headers Array of headers.
@@ -495,43 +443,19 @@ class Gist_API extends API implements API_Interface {
 	 * @return mixed
 	 */
 	public function remote_install( $headers, $install ) {
-		// $github_com                     = true;
-		// $options['github_access_token'] = isset( static::$options['github_access_token'] ) ? static::$options//['github_access_token'] : null;
-		//
-		// if ( 'github.com' === $headers['host'] || empty( $headers['host'] ) ) {
-		// $base            = 'https://api.github.com';
-		// $headers['host'] = 'github.com';
-		// } else {
-		// $base       = $headers['base_uri'] . '/api/v3';
-		// $github_com = false;
-		// }
-		//
-		// $install['download_link'] = "{$base}/repos/{$install['github_updater_repo']}/zipball/{$install//['github_updater_branch']}";
-		//
-		// If asset is entered install it.
-		// if ( false !== stripos( $headers['uri'], 'releases/download' ) ) {
-		// $install['download_link'] = $headers['uri'];
-		// }
-		//
-		// *
-		// * Add/Save access token if present.
-		// */
-		// if ( ! empty( $install['github_access_token'] ) ) {
-		// $install['options'][ $install['repo'] ] = $install['github_access_token'];
-		// if ( $github_com ) {
-		// $install['options']['github_access_token'] = $install['github_access_token'];
-		// }
-		// }
-		// if ( $github_com ) {
-		// $token = ! empty( $install['options']['github_access_token'] )
-		// ? $install['options']['github_access_token']
-		// : $options['github_access_token'];
-		// }
-		//
-		// if ( ! empty( static::$options['github_access_token'] ) ) {
-		// unset( $install['options']['github_access_token'] );
-		// }
-		//
-		// return $install;
+		if ( ! is_object( $this->type ) ) {
+			$this->type       = new \stdClass();
+			$this->type->type = 'gist';
+			$this->type->git  = 'gist';
+		}
+		$type                                   = $this->return_repo_type();
+		$response                               = wp_remote_get( "{$type['base_uri']}/gists/{$headers['repo']}" );
+		$response                               = wp_remote_retrieve_body( $response );
+		$response                               = json_decode( $response );
+		$meta                                   = $this->parse_meta_response( $response );
+		$install['download_link']               = "{$type['base_download']}/{$install['github_updater_repo']}/archive/{$meta['current_hash']}.zip";
+		$install['github_updater_install_repo'] = $install['gist_slug'];
+
+		return $install;
 	}
 }

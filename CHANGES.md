@@ -1,6 +1,6 @@
 #### [unreleased]
 * add WP-CLI branch switching
-* add `class Gist_API` to update GitHub Gists
+* add `class Gist_API` to install/update GitHub Gists, for plugins only
 
 #### 9.5.2 / 2020-05-09
 * no need for using release asset with GHU
