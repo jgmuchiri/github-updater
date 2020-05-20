@@ -383,13 +383,15 @@ class Gist_API extends API implements API_Interface {
 	 * @param string $type plugin|theme.
 	 */
 	public function add_install_settings_fields( $type ) {
-		add_settings_field(
-			'gist_slug',
-			esc_html__( 'Gist Slug', 'github-updater' ),
-			[ $this, 'gist_slug' ],
-			'github_updater_install_' . $type,
-			$type
-		);
+		if ( 'plugin' === $type ) {
+			add_settings_field(
+				'gist_slug',
+				esc_html__( 'Gist Slug', 'github-updater' ),
+				[ $this, 'gist_slug' ],
+				'github_updater_install_' . $type,
+				$type
+			);
+		}
 	}
 
 	/**
@@ -453,8 +455,9 @@ class Gist_API extends API implements API_Interface {
 		$response                               = wp_remote_retrieve_body( $response );
 		$response                               = json_decode( $response );
 		$meta                                   = $this->parse_meta_response( $response );
+		$is_theme                               = property_exists( $response->files, 'style.css' );
 		$install['download_link']               = "{$type['base_download']}/{$install['github_updater_repo']}/archive/{$meta['current_hash']}.zip";
-		$install['github_updater_install_repo'] = $install['gist_slug'];
+		$install['github_updater_install_repo'] = ! $is_theme ? $install['gist_slug'] : $install['github_updater_install_repo'];
 
 		return $install;
 	}
