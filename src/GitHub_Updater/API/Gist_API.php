@@ -210,7 +210,7 @@ class Gist_API extends API implements API_Interface {
 	 */
 	public function parse_gist_meta( $repo ) {
 		$repo->gist_id = property_exists( $repo, 'gist_id' ) ? $repo->gist_id : $repo->slug;
-		$repo->slug    = dirname( $repo->file );
+		$repo->slug    = property_exists( $repo, 'file' ) ? dirname( $repo->file ) : $repo->slug;
 
 		return $repo;
 	}
@@ -398,36 +398,6 @@ class Gist_API extends API implements API_Interface {
 	}
 
 	/**
-	 * GitHub Access Token for remote install.
-	 */
-	public function github_access_token() {
-		?>
-		<label for="github_access_token">
-			<input class="github_setting" type="password" style="width:50%;" id="github_access_token" name="github_access_token" value="" autocomplete="new-password">
-			<br>
-			<span class="description">
-				<?php esc_html_e( 'Enter GitHub Access Token for private GitHub repositories.', 'github-updater' ); ?>
-			</span>
-		</label>
-		<?php
-	}
-
-	/**
-	 * Set repo slug for remote install.
-	 */
-	public function gist_slug() {
-		?>
-		<label for="gist_slug">
-			<input class="gist_setting" type="text" style="width:50%;" id="gist_slug" name="gist_slug" value="" placeholder="my-repo-slug">
-			<br>
-			<span class="description">
-				<?php esc_html_e( 'Enter plugin or theme slug.', 'github-updater' ); ?>
-			</span>
-		</label>
-		<?php
-	}
-
-	/**
 	 * Add remote install feature, create endpoint.
 	 *
 	 * @param array $headers Array of headers.
@@ -436,20 +406,42 @@ class Gist_API extends API implements API_Interface {
 	 * @return mixed
 	 */
 	public function remote_install( $headers, $install ) {
-		if ( ! is_object( $this->type ) ) {
-			$this->type       = new \stdClass();
-			$this->type->type = 'gist';
-			$this->type->git  = 'gist';
-		}
-		$type                                   = $this->return_repo_type();
-		$response                               = wp_remote_get( "{$type['base_uri']}/gists/{$headers['repo']}" );
-		$response                               = wp_remote_retrieve_body( $response );
-		$response                               = json_decode( $response );
-		$meta                                   = $this->parse_meta_response( $response );
-		$is_theme                               = property_exists( $response->files, 'style.css' );
-		$install['download_link']               = "{$type['base_download']}/{$install['github_updater_repo']}/archive/{$meta['current_hash']}.zip";
-		$install['github_updater_install_repo'] = ! $is_theme ? $install['gist_slug'] : $install['github_updater_install_repo'];
+		$remote                                 = $this->parse_remote_gist( $headers );
+		$install['download_link']               = "{$remote->type['base_download']}/{$install['github_updater_repo']}/archive/{$remote->meta['current_hash']}.zip";
+		$install['github_updater_install_repo'] = property_exists( $remote, 'slug' ) ? $remote->slug : $install['github_updater_install_repo'];
 
 		return $install;
+	}
+
+	/**
+	 * Parse gist remote meta for Install.
+	 *
+	 * @param array $headers Array of headers.
+	 *
+	 * @return array $remote
+	 */
+	private function parse_remote_gist( $headers ) {
+		$remote              = new \stdClass();
+		self::$method        = 'meta';
+		$this->type          = new \stdClass();
+		$this->type->type    = 'gist';
+		$this->type->git     = 'gist';
+		$this->type->owner   = $headers['owner'];
+		$this->type->slug    = $headers['repo'];
+		$this->type->gist_id = $headers['repo'];
+		$remote->type        = $this->return_repo_type();
+
+		$response         = $this->api( '/gists/:gist_id' );
+		$remote->meta     = $this->parse_meta_response( $response );
+		$remote->is_theme = property_exists( $response->files, 'style.css' );
+		$type             = $remote->is_theme ? 'theme' : 'plugin';
+		foreach ( $response->files as $file ) {
+			$file_headers = $this->get_file_headers( $file->content, $type );
+			if ( ! empty( $file_headers ) && ! $remote->is_theme ) {
+				$remote->slug = pathinfo( $file->filename )['filename'];
+			}
+		}
+
+		return $remote;
 	}
 }
