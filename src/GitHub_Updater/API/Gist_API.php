@@ -63,7 +63,7 @@ class Gist_API extends API implements API_Interface {
 	/**
 	 * Get remote info for tags.
 	 *
-	 * @return bool
+	 * @return bool|void
 	 */
 	public function get_remote_tag() {
 		// phpcs:ignore
@@ -102,7 +102,7 @@ class Gist_API extends API implements API_Interface {
 	/**
 	 * Create array of branches and download links as array.
 	 *
-	 * @return bool
+	 * @return bool|void
 	 */
 	public function get_remote_branches() {
 		// phpcs:ignore
@@ -112,7 +112,7 @@ class Gist_API extends API implements API_Interface {
 	/**
 	 * Return the GitHub release asset URL.
 	 *
-	 * @return string|bool
+	 * @return string|bool|void
 	 */
 	public function get_release_asset() {
 		// phpcs:ignore
@@ -335,7 +335,7 @@ class Gist_API extends API implements API_Interface {
 	 */
 	public function add_settings( $auth_required ) {
 		add_settings_section(
-			'github_access_token',
+			'gist_settings',
 			esc_html__( 'GitHub Gist Settings', 'github-updater' ),
 			null,
 			'github_updater_gist_install_settings'
@@ -383,15 +383,6 @@ class Gist_API extends API implements API_Interface {
 	 * @param string $type plugin|theme.
 	 */
 	public function add_install_settings_fields( $type ) {
-		if ( 'plugin' === $type ) {
-			add_settings_field(
-				'gist_slug',
-				esc_html__( 'Gist Slug', 'github-updater' ),
-				[ $this, 'gist_slug' ],
-				'github_updater_install_' . $type,
-				$type
-			);
-		}
 	}
 
 	/**
