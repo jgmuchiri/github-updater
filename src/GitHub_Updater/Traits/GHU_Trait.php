@@ -668,7 +668,7 @@ trait GHU_Trait {
 			return true;
 		}
 		$dir = opendir( $source );
-		mkdir( $destination );
+		@mkdir( $destination );
 		$source = untrailingslashit( $source );
 		// phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
 		while ( false !== ( $file = readdir( $dir ) ) ) {
