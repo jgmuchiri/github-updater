@@ -386,7 +386,8 @@ class Gist_API extends API implements API_Interface {
 	 */
 	public function remote_install( $headers, $install ) {
 		$remote                                 = $this->parse_remote_gist( $headers );
-		$install['download_link']               = "{$remote->type['base_download']}/{$install['github_updater_repo']}/archive/{$remote->meta['current_hash']}.zip";
+		self::$method                           = 'download_link';
+		$install['download_link']               = $this->get_api_url( "/{$install['github_updater_repo']}/archive/{$remote->meta['current_hash']}.zip" );
 		$install['github_updater_install_repo'] = property_exists( $remote, 'slug' ) ? $remote->slug : $install['github_updater_install_repo'];
 
 		return $install;
@@ -409,7 +410,6 @@ class Gist_API extends API implements API_Interface {
 		$this->type->slug    = $headers['repo'];
 		$this->type->gist_id = $headers['repo'];
 
-		$remote->type     = $this->return_repo_type();
 		$response         = $this->api( '/gists/:gist_id' );
 		$remote->meta     = $this->parse_meta_response( $response );
 		$remote->is_theme = property_exists( $response->files, 'style.css' );
