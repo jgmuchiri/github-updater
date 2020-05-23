@@ -387,7 +387,7 @@ class Gist_API extends API implements API_Interface {
 	public function remote_install( $headers, $install ) {
 		$remote                                 = $this->get_remote_gist_install( $headers );
 		self::$method                           = 'download_link';
-		$install['download_link']               = $this->get_api_url( "/{$install['github_updater_repo']}/archive/{$remote->meta['current_hash']}.zip" );
+		$install['download_link']               = $this->get_api_url( "/:owner/:gist_id/archive/{$remote->meta['current_hash']}.zip" );
 		$install['github_updater_install_repo'] = property_exists( $remote, 'slug' ) ? $remote->slug : $install['github_updater_install_repo'];
 
 		return $install;
