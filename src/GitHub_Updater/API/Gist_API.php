@@ -181,27 +181,6 @@ class Gist_API extends API implements API_Interface {
 	}
 
 	/**
-	 * Calculate and store time until rate limit reset.
-	 *
-	 * @param array  $response HTTP headers.
-	 * @param string $repo     Repo name.
-	 */
-	public static function ratelimit_reset( $response, $repo ) {
-		if ( isset( $response['headers']['x-ratelimit-reset'] ) ) {
-			$reset = (int) $response['headers']['x-ratelimit-reset'];
-			//phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-			$wait                        = date( 'i', $reset - time() );
-			static::$error_code[ $repo ] = array_merge(
-				static::$error_code[ $repo ],
-				[
-					'git'  => 'github',
-					'wait' => $wait,
-				]
-			);
-		}
-	}
-
-	/**
 	 * Parse gist data.
 	 *
 	 * @param \stdClass $repo Repository object.
@@ -429,8 +408,8 @@ class Gist_API extends API implements API_Interface {
 		$this->type->owner   = $headers['owner'];
 		$this->type->slug    = $headers['repo'];
 		$this->type->gist_id = $headers['repo'];
-		$remote->type        = $this->return_repo_type();
 
+		$remote->type     = $this->return_repo_type();
 		$response         = $this->api( '/gists/:gist_id' );
 		$remote->meta     = $this->parse_meta_response( $response );
 		$remote->is_theme = property_exists( $response->files, 'style.css' );

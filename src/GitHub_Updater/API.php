@@ -217,7 +217,7 @@ class API {
 					],
 				]
 			);
-			if ( 'github' === $type['git'] ) {
+			if ( in_array( $type['git'], [ 'github', 'gist' ], true ) ) {
 				GitHub_API::ratelimit_reset( $response, $this->type->slug );
 			}
 			Singleton::get_instance( 'Messages', $this )->create_error_message( $type['git'] );
